@@ -17,14 +17,9 @@ POPULATED_CHAR = 'o'
 
 
 def main(stdscr):
-    # Reset terminal from curses mode on exit.
     @atexit.register
-    def reset_screen():
-        curses.nocbreak()
-        if stdscr:
-            stdscr.keypad(0)
-        curses.echo()
-        curses.endwin()
+    def onexit():
+        reset_screen(stdscr)
 
     # Run the game.
     grid = create_grid(WIDTH, HEIGHT)
@@ -33,6 +28,15 @@ def main(stdscr):
         render(grid, stdscr)
         sleep(INTERVAL)
         make_step(grid)
+
+
+def reset_screen(stdscr):
+    """ Reset terminal from curses mode on exit. """
+    curses.nocbreak()
+    if stdscr:
+        stdscr.keypad(0)
+    curses.echo()
+    curses.endwin()
 
 
 def create_grid(width, height):
