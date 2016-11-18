@@ -28,7 +28,6 @@ def main():
         render(grid, screen, CELL_SIZE)
         sleep(INTERVAL)
         make_step(grid)
-        print('.')
 
 
 def create_grid(width, height):
