@@ -9,13 +9,13 @@ from time import sleep
 import pygame
 
 
-WIDTH = 150
-HEIGHT = 150
-CELL_SIZE = 10
+WIDTH = 300
+HEIGHT = 300
+CELL_SIZE = 5
 BG_COLOR = 255, 255, 255
 CELL_COLOR = 0, 100, 0
 INTERVAL = 0.1
-INIT_DENSITY = 0.3  # From 0 to 1.
+INIT_DENSITY = 0.1  # From 0 to 1.
 
 
 def main():
