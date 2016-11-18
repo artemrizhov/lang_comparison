@@ -26,7 +26,7 @@ def main():
     init_grid_random(grid)
     while not interrupted():
         render(grid, screen, CELL_SIZE)
-        # sleep(INTERVAL)
+        sleep(INTERVAL)
         make_step(grid)
         print('.')
 
