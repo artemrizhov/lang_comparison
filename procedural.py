@@ -92,15 +92,6 @@ def calc_cell(grid, y, x, y_len, x_len):
         return neighbours == 3
 
 
-def translate_pos(i, max_i):
-    """ If position is not in range then move it to the opposite side """
-    if i < 0:
-        i += max_i
-    elif i >= max_i:
-        i -= max_i
-    return i
-
-
 def interrupted():
     return pygame.QUIT in (event.type for event in pygame.event.get())
 
