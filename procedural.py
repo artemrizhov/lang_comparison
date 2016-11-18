@@ -26,8 +26,9 @@ def main():
     init_grid_random(grid)
     while not interrupted():
         render(grid, screen, CELL_SIZE)
-        sleep(INTERVAL)
+        # sleep(INTERVAL)
         make_step(grid)
+        print('.')
 
 
 def create_grid(width, height):
@@ -55,9 +56,10 @@ def init_grid_random(grid):
 def make_step(grid):
     """ Make next step in the game time """
     old_grid = deepcopy(grid)
-    row_len = len(grid[0])
-    for y in range(len(grid)):
-        for x in range(row_len):
+    y_len = len(grid)
+    x_len = len(grid[0])
+    for y in range(y_len):
+        for x in range(x_len):
             grid[y][x] = calc_cell(old_grid, y, x)
 
 
@@ -66,26 +68,21 @@ def calc_cell(grid, y, x):
     # Count neighbours.
     y_len = len(grid)
     x_len = len(grid[0])
-    y_range = list(range(y - 1, y + 2))
+    y1, y2, y3 = y - 1, y, y + 1
     if y == 0:
-        y_range[0] = y_len - 1
+        y1 = y_len - 1
     elif y == y_len - 1:
-        y_range[2] = 0
-    x_range = list(range(x - 1, x + 2))
+        y3 = 0
+    x1, x2, x3 = x - 1, x, x + 1
     if x == 0:
-        x_range[0] = x_len - 1
+        x1 = x_len - 1
     elif x == x_len - 1:
-        x_range[2] = 0
+        x3 = 0
 
     neighbours = (
-        int(grid[y_range[0]][x_range[0]]) +
-        int(grid[y_range[0]][x_range[1]]) +
-        int(grid[y_range[0]][x_range[2]]) +
-        int(grid[y_range[1]][x_range[0]]) +
-        int(grid[y_range[1]][x_range[2]]) +
-        int(grid[y_range[2]][x_range[0]]) +
-        int(grid[y_range[2]][x_range[1]]) +
-        int(grid[y_range[2]][x_range[2]])
+        int(grid[y1][x1]) + int(grid[y1][x2]) + int(grid[y1][x3]) +
+        int(grid[y2][x1]) + int(grid[y2][x3]) +
+        int(grid[y3][x1]) + int(grid[y3][x2]) + int(grid[y3][x3])
     )
 
     # Choice new value.
