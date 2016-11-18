@@ -64,15 +64,29 @@ def make_step(grid):
 def calc_cell(grid, y, x):
     """ Calculate the next state of the cell """
     # Count neighbours.
-    max_y = len(grid)
-    max_x = len(grid[0])
-    neighbours = 0
-    for ny in range(y - 1, y + 2):
-        ny = translate_pos(ny, max_y)
-        for nx in range(x - 1, x + 2):
-            nx = translate_pos(nx, max_x)
-            if grid[ny][nx] and not (ny == y and nx == x):
-                neighbours += 1
+    y_len = len(grid)
+    x_len = len(grid[0])
+    y_range = list(range(y - 1, y + 2))
+    if y == 0:
+        y_range[0] = y_len - 1
+    elif y == y_len - 1:
+        y_range[2] = 0
+    x_range = list(range(x - 1, x + 2))
+    if x == 0:
+        x_range[0] = x_len - 1
+    elif x == x_len - 1:
+        x_range[2] = 0
+
+    neighbours = (
+        int(grid[y_range[0]][x_range[0]]) +
+        int(grid[y_range[0]][x_range[1]]) +
+        int(grid[y_range[0]][x_range[2]]) +
+        int(grid[y_range[1]][x_range[0]]) +
+        int(grid[y_range[1]][x_range[2]]) +
+        int(grid[y_range[2]][x_range[0]]) +
+        int(grid[y_range[2]][x_range[1]]) +
+        int(grid[y_range[2]][x_range[2]])
+    )
 
     # Choice new value.
     if grid[y][x]:
