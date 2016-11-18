@@ -9,13 +9,23 @@ from time import sleep
 import pygame
 
 
-WIDTH = 150
-HEIGHT = 150
+WIDTH = 200
+HEIGHT = 100
 CELL_SIZE = 10
 BG_COLOR = 255, 255, 255
 CELL_COLOR = 0, 100, 0
 INTERVAL = 0.1
-INIT_DENSITY = 0.3  # From 0 to 1.
+INIT_DENSITY = 0.05  # From 0 to 1.
+
+GLIDER = [
+    [0, 0, 1],
+    [1, 0, 1],
+    [0, 1, 1],
+]
+CUBE = [
+    [1, 1],
+    [1, 1],
+]
 
 
 def main():
@@ -23,7 +33,7 @@ def main():
 
     # Run the game.
     grid = create_grid(WIDTH, HEIGHT)
-    init_grid_random(grid)
+    init_grid(grid)
     while not interrupted():
         render(grid, screen, CELL_SIZE)
         sleep(INTERVAL)
@@ -40,16 +50,18 @@ def create_grid(width, height):
     return [[False for x in range(width)] for y in range(height)]
 
 
-def init_grid_random(grid):
-    """
-    Init grid with random state
+def init_grid(grid):
+    add_figure(grid, GLIDER, 53, 50)
+    add_figure(grid, CUBE, 60, 60)
 
-    Each cell is set to the "populated" state with probability
-    ``INIT_DENSITY``.
-    """
-    for row in grid:
-        for x in range(len(row)):
-            row[x] = random() < INIT_DENSITY
+    add_figure(grid, GLIDER, 154, 50)
+    add_figure(grid, CUBE, 160, 60)
+
+
+def add_figure(grid, figure, x, y):
+    for fy, row in enumerate(figure):
+        for fx, cell in enumerate(row):
+            grid[y+fy][x+fx] = cell
 
 
 def make_step(grid):
