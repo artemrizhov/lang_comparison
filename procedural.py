@@ -60,14 +60,12 @@ def make_step(grid):
     x_len = len(grid[0])
     for y in range(y_len):
         for x in range(x_len):
-            grid[y][x] = calc_cell(old_grid, y, x)
+            grid[y][x] = calc_cell(old_grid, y, x, y_len, x_len)
 
 
-def calc_cell(grid, y, x):
+def calc_cell(grid, y, x, y_len, x_len):
     """ Calculate the next state of the cell """
-    # Count neighbours.
-    y_len = len(grid)
-    x_len = len(grid[0])
+    # Define neighbours.
     y1, y2, y3 = y - 1, y, y + 1
     if y == 0:
         y1 = y_len - 1
@@ -79,11 +77,13 @@ def calc_cell(grid, y, x):
     elif x == x_len - 1:
         x3 = 0
 
-    neighbours = (
-        int(grid[y1][x1]) + int(grid[y1][x2]) + int(grid[y1][x3]) +
-        int(grid[y2][x1]) + int(grid[y2][x3]) +
-        int(grid[y3][x1]) + int(grid[y3][x2]) + int(grid[y3][x3])
-    )
+    # Count neighbours.
+    neighbours = sum(
+        1 for cell in (
+            grid[y1][x1], grid[y1][x2], grid[y1][x3],
+            grid[y2][x1], grid[y2][x3],
+            grid[y3][x1], grid[y3][x2], grid[y3][x3]
+        ) if cell)
 
     # Choice new value.
     if grid[y][x]:
