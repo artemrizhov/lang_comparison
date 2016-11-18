@@ -2,41 +2,32 @@
 The Game of Life implemented in procedural style.
 https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
 """
-import atexit
-import curses
 from copy import deepcopy
 from random import random
 from time import sleep
 
+import pygame
 
-WIDTH = 40
-HEIGHT = 20
+
+WIDTH = 150
+HEIGHT = 150
+CELL_SIZE = 10
+BG_COLOR = 255, 255, 255
+CELL_COLOR = 0, 100, 0
 INTERVAL = 0.1
 INIT_DENSITY = 0.3  # From 0 to 1.
-POPULATED_CHAR = 'o'
 
 
-def main(stdscr):
-    @atexit.register
-    def onexit():
-        reset_screen(stdscr)
+def main():
+    screen = init_screen(WIDTH, HEIGHT, CELL_SIZE)
 
     # Run the game.
     grid = create_grid(WIDTH, HEIGHT)
     init_grid_random(grid)
-    while True:
-        render(grid, stdscr)
+    while not interrupted():
+        render(grid, screen, CELL_SIZE)
         sleep(INTERVAL)
         make_step(grid)
-
-
-def reset_screen(stdscr):
-    """ Reset terminal from curses mode on exit. """
-    curses.nocbreak()
-    if stdscr:
-        stdscr.keypad(0)
-    curses.echo()
-    curses.endwin()
 
 
 def create_grid(width, height):
@@ -99,22 +90,28 @@ def translate_pos(i, max_i):
     return i
 
 
-def render(grid, stdscr):
+def interrupted():
+    return pygame.QUIT in (event.type for event in pygame.event.get())
+
+
+def init_screen(width, height, cell_size):
+    return pygame.display.set_mode((width * cell_size, height * cell_size))
+
+
+def render(grid, screen, cell_size):
     # Clear the screen.
-    stdscr.clear()
-    # Prepare the output text.
-    output = []
-    for y in range(len(grid)):
-        row = grid[y]
-        for cell in row:
-            output.append(POPULATED_CHAR if cell else " ")
-        output.append("\n")
+    screen.fill(BG_COLOR)
+    # Draw the grid.
+    size = cell_size
+    for y, row in enumerate(grid):
+        for x, cell in enumerate(row):
+            if cell:
+                screen.fill(CELL_COLOR,
+                            (x*size, y*size, size, size))
     # Output the text.
-    stdscr.addstr(0, 0, "".join(output))
-    # Make the changes visible.
-    stdscr.refresh()
+    pygame.display.flip()
 
 
 if __name__ == "__main__":
     # execute only if run as a script
-    curses.wrapper(main)()
+    main()
