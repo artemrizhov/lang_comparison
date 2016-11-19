@@ -18,9 +18,9 @@ INTERVAL = 0.1
 INIT_DENSITY = 0.05  # From 0 to 1.
 
 GLIDER = [
-    [0, 0, 1],
+    [1, 1, 0],
     [1, 0, 1],
-    [0, 1, 1],
+    [1, 0, 0],
 ]
 CUBE = [
     [1, 1],
@@ -51,10 +51,10 @@ def create_grid(width, height):
 
 
 def init_grid(grid):
-    add_figure(grid, GLIDER, 53, 50)
+    add_figure(grid, GLIDER, 67, 70)
     add_figure(grid, CUBE, 60, 60)
 
-    add_figure(grid, GLIDER, 154, 50)
+    add_figure(grid, GLIDER, 166, 70)
     add_figure(grid, CUBE, 160, 60)
 
 
