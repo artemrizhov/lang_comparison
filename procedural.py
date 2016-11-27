@@ -23,11 +23,11 @@ def main():
 
     # Run the game.
     grid = create_grid(WIDTH, HEIGHT)
-    init_grid_random(grid)
+    init_grid_random(grid, WIDTH, HEIGHT)
     while not interrupted():
         render(grid, screen, CELL_SIZE)
         sleep(INTERVAL)
-        make_step(grid)
+        make_step(grid, WIDTH, HEIGHT)
 
 
 def create_grid(width, height):
@@ -40,7 +40,7 @@ def create_grid(width, height):
     return [[False for x in range(width)] for y in range(height)]
 
 
-def init_grid_random(grid):
+def init_grid_random(grid, width, height):
     """
     Init grid with random state
 
@@ -48,24 +48,22 @@ def init_grid_random(grid):
     ``INIT_DENSITY``.
     """
     for row in grid:
-        for x in range(len(row)):
+        for x in range(width):
             row[x] = random() < INIT_DENSITY
 
 
-def make_step(grid):
+def make_step(grid, width, height):
     """ Make next step in the game time """
     old_grid = deepcopy(grid)
-    y_len = len(grid)
-    x_len = len(grid[0])
-    for y in range(y_len):
-        for x in range(x_len):
-            grid[y][x] = calc_cell(old_grid, y, x, y_len, x_len)
+    for y in range(height):
+        for x in range(width):
+            grid[y][x] = calc_cell(old_grid, x, y, width, height)
 
 
-def calc_cell(grid, y, x, y_len, x_len):
+def calc_cell(grid, x, y, width, height):
     """ Calculate the next state of the cell """
-    # Count alive neighbours.
-    neighbours = sum(1 for nx, ny in get_neighbours(x, y, x_len, y_len)
+    # Count populated neighbours.
+    neighbours = sum(1 for nx, ny in get_neighbours(x, y, width, height)
                      if grid[ny][nx])
 
     # Choice new value.
@@ -75,17 +73,17 @@ def calc_cell(grid, y, x, y_len, x_len):
         return neighbours == 3
 
 
-def get_neighbours(x, y, x_len, y_len):
+def get_neighbours(x, y, width, height):
     """ Calculates and returns the neighbours coordinates """
     y1, y2, y3 = y - 1, y, y + 1
     if y == 0:
-        y1 = y_len - 1
-    elif y == y_len - 1:
+        y1 = height - 1
+    elif y == height - 1:
         y3 = 0
     x1, x2, x3 = x - 1, x, x + 1
     if x == 0:
-        x1 = x_len - 1
-    elif x == x_len - 1:
+        x1 = width - 1
+    elif x == width - 1:
         x3 = 0
 
     return ((x1, y1), (x1, y2), (x1, y3),
@@ -105,13 +103,12 @@ def render(grid, screen, cell_size):
     # Clear the screen.
     screen.fill(BG_COLOR)
     # Draw the grid.
-    size = cell_size
     for y, row in enumerate(grid):
         for x, cell in enumerate(row):
             if cell:
                 screen.fill(CELL_COLOR,
-                            (x*size, y*size, size, size))
-    # Output the text.
+                            (x*cell_size, y*cell_size, cell_size, cell_size))
+    # Show changes.
     pygame.display.flip()
 
 
