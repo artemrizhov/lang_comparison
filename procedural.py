@@ -64,7 +64,19 @@ def make_step(grid):
 
 def calc_cell(grid, y, x, y_len, x_len):
     """ Calculate the next state of the cell """
-    # Define neighbours.
+    # Count alive neighbours.
+    neighbours = sum(1 for nx, ny in get_neighbours(x, y, x_len, y_len)
+                     if grid[ny][nx])
+
+    # Choice new value.
+    if grid[y][x]:
+        return 2 <= neighbours <= 3
+    else:
+        return neighbours == 3
+
+
+def get_neighbours(x, y, x_len, y_len):
+    """ Calculates and returns the neighbours coordinates """
     y1, y2, y3 = y - 1, y, y + 1
     if y == 0:
         y1 = y_len - 1
@@ -76,19 +88,9 @@ def calc_cell(grid, y, x, y_len, x_len):
     elif x == x_len - 1:
         x3 = 0
 
-    # Count neighbours.
-    neighbours = sum(
-        1 for cell in (
-            grid[y1][x1], grid[y1][x2], grid[y1][x3],
-            grid[y2][x1], grid[y2][x3],
-            grid[y3][x1], grid[y3][x2], grid[y3][x3]
-        ) if cell)
-
-    # Choice new value.
-    if grid[y][x]:
-        return 2 <= neighbours <= 3
-    else:
-        return neighbours == 3
+    return ((x1, y1), (x1, y2), (x1, y3),
+            (x2, y1), (x2, y3),
+            (x3, y1), (x3, y2), (x3, y3))
 
 
 def interrupted():
