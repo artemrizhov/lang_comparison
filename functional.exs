@@ -71,14 +71,10 @@ defmodule LifeGame do
   def render(screen, grid, width, height) do
     context = Screen.start_drawing(screen)
     Screen.clear context
-    for y <- 0..(height-1) do
-      for x <- 0..(width-1) do
-        if grid_elem(grid, x, y) do
-          Screen.draw_rectangle(
-            context, @cell_color,
-            x * @cell_size, y * @cell_size, @cell_size, @cell_size)
-        end
-      end
+    for y <- 0..(height-1), x <- 0..(width-1), grid_elem(grid, x, y) do
+      Screen.draw_rectangle(
+        context, @cell_color,
+        x * @cell_size, y * @cell_size, @cell_size, @cell_size)
     end
     Screen.finish_drawing(context)
   end
