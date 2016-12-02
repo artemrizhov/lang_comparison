@@ -48,7 +48,6 @@ defmodule LifeGame do
     else
       alive_count == 3
     end
-
   end
 
   def get_neighbours(x, y, width, height) do
