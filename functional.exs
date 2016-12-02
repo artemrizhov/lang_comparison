@@ -17,7 +17,7 @@ defmodule LifeGame do
   end
 
   def run(grid, width, height, screen) do
-    Screen.update screen, &(render &1, grid, width, height)
+    render screen, grid, width, height
     Process.sleep @interval
     grid |> make_step(width, height) |> run(width, height, screen)
   end
@@ -68,16 +68,19 @@ defmodule LifeGame do
     elem(elem(grid, y), x)
   end
 
-  def render(dc, grid, width, height) do
+  def render(screen, grid, width, height) do
+    context = Screen.start_drawing(screen)
+    Screen.clear context
     for y <- 0..(height-1) do
       for x <- 0..(width-1) do
         if grid_elem(grid, x, y) do
           Screen.draw_rectangle(
-            dc, @cell_color,
+            context, @cell_color,
             x * @cell_size, y * @cell_size, @cell_size, @cell_size)
         end
       end
     end
+    Screen.finish_drawing(context)
   end
 end
 
@@ -90,15 +93,19 @@ defmodule Screen do
     _create_window(title, width * cell_size, height * cell_size)
   end
 
-  def update(frame, renderer) do
-    dc = :wxBufferedPaintDC.new(frame)
-    # Clear screen.
+  def start_drawing(frame) do
+    # Returns drawing context.
+    :wxBufferedPaintDC.new(frame)
+  end
+
+  def finish_drawing(dc) do
+    :wxBufferedPaintDC.destroy dc
+  end
+
+  def clear(dc) do
     :wxDC.setBackground dc, brush = :wxBrush.new({255, 255, 255})
     :wxDC.clear dc
     :wxBrush.destroy brush
-    # Call the render function.
-    renderer.(dc)
-    :wxBufferedPaintDC.destroy dc
   end
 
   def draw_rectangle(dc, color, x, y, width, height) do
