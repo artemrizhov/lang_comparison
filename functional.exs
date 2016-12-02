@@ -132,7 +132,7 @@ defmodule Screen do
     :wxDC.clear dc
     :wxBrush.destroy brush
     # Call the render function.
-    if data != nil do
+    if next_data != nil do
       renderer.(dc, next_data)
     end
     :wxBufferedPaintDC.destroy dc
