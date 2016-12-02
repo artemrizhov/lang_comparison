@@ -63,14 +63,14 @@ def make_step(grid, width, height):
 def calc_cell(grid, x, y, width, height):
     """ Calculate the next state of the cell """
     # Count populated neighbours.
-    neighbours = sum(1 for nx, ny in get_neighbours(x, y, width, height)
+    alive_count = sum(1 for nx, ny in get_neighbours(x, y, width, height)
                      if grid[ny][nx])
 
     # Choice new value.
     if grid[y][x]:
-        return 2 <= neighbours <= 3
+        return 2 <= alive_count <= 3
     else:
-        return neighbours == 3
+        return alive_count == 3
 
 
 def get_neighbours(x, y, width, height):
