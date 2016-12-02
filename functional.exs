@@ -110,7 +110,7 @@ defmodule Screen do
     :wx.new()
     frame = :wxFrame.new(
       :wx.null, wxID_ANY, title, size: {width, height},
-       style: wxSYSTEM_MENU ||| wxMINIMIZE_BOX  ||| wxCLOSE_BOX ||| wxCAPTION ||| wxRESIZE_BORDER)
+       style: wxSYSTEM_MENU ||| wxMINIMIZE_BOX  ||| wxCLOSE_BOX ||| wxCAPTION)
     current = self()
     :wxPanel.connect frame, :paint, [callback: fn (event, object) ->
       send current, {:wx, event, object}
