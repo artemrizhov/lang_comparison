@@ -12,13 +12,12 @@ defmodule LifeGame do
   @init_density 0.1  # From 0 to 1.
 
   def start do
-    screen = Screen.init("Game of Life", @width, @height, @cell_size,
-                         &render/2)
+    screen = Screen.init("Game of Life", @width, @height, @cell_size)
     create_random_grid(@width, @height) |> run(@width, @height, screen)
   end
 
   def run(grid, width, height, screen) do
-    Screen.update screen, grid: grid, width: width, height: height
+    Screen.update screen, &(render &1, grid, width, height)
     Process.sleep @interval
     grid |> make_step(width, height) |> run(width, height, screen)
   end
@@ -69,7 +68,7 @@ defmodule LifeGame do
     elem(elem(grid, y), x)
   end
 
-  def render(dc, grid: grid, width: width, height: height) do
+  def render(dc, grid, width, height) do
     for y <- 0..(height-1) do
       for x <- 0..(width-1) do
         if grid_elem(grid, x, y) do
@@ -86,16 +85,20 @@ end
 defmodule Screen do
   import Bitwise
 
-  def init(title, width, height, cell_size, renderer) do
+  def init(title, width, height, cell_size) do
     title = to_charlist(title)
-    spawn fn ->
-      _create_window(title, width * cell_size, height * cell_size)
-      |> _process_messages(renderer)
-    end
+    _create_window(title, width * cell_size, height * cell_size)
   end
 
-  def update(screen_pid, data \\ []) do
-    send screen_pid, {:update, data}
+  def update(frame, renderer) do
+    dc = :wxBufferedPaintDC.new(frame)
+    # Clear screen.
+    :wxDC.setBackground dc, brush = :wxBrush.new({255, 255, 255})
+    :wxDC.clear dc
+    :wxBrush.destroy brush
+    # Call the render function.
+    renderer.(dc)
+    :wxBufferedPaintDC.destroy dc
   end
 
   def draw_rectangle(dc, color, x, y, width, height) do
@@ -111,31 +114,8 @@ defmodule Screen do
     frame = :wxFrame.new(
       :wx.null, wxID_ANY, title, size: {width, height},
        style: wxSYSTEM_MENU ||| wxMINIMIZE_BOX  ||| wxCLOSE_BOX ||| wxCAPTION)
-    current = self()
-    :wxPanel.connect frame, :paint, [callback: fn (event, object) ->
-      send current, {:wx, event, object}
-    end]
     :wxFrame.show frame
     frame
-  end
-
-  def _process_messages(frame, renderer, data \\ nil) do
-    next_data =
-      receive do
-        {:wx, _, _} -> data
-        {:update, new_data} -> new_data
-      end
-
-    dc = :wxBufferedPaintDC.new(frame)
-    # Clear screen.
-    :wxDC.setBackground dc, brush = :wxBrush.new({255, 255, 255})
-    :wxDC.clear dc
-    :wxBrush.destroy brush
-    # Call the render function.
-    if next_data != nil, do: renderer.(dc, next_data)
-    :wxBufferedPaintDC.destroy dc
-
-    _process_messages frame, renderer, next_data
   end
 end
 
