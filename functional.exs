@@ -112,6 +112,7 @@ defmodule Screen do
   end
 
   def finish_drawing(dc) do
+    # This is required to make the changes visible.
     :wxBufferedPaintDC.destroy dc
   end
 
