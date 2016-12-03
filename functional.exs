@@ -47,9 +47,10 @@ defmodule LifeGame do
   """
   def calc_cell(grid, x, y, width, height) do
     # Count populated neighbours.
-    alive_count = Enum.sum(for {nx, ny} <- get_neighbours(x, y, width, height) do
-      if grid_elem(grid, nx, ny), do: 1, else: 0
-    end)
+    alive_count =
+      Enum.sum(for {nx, ny} <- get_neighbours(x, y, width, height) do
+        if grid_elem(grid, nx, ny), do: 1, else: 0
+      end)
     # Choice next value.
     if grid_elem(grid, x, y) do
       alive_count >= 2 and alive_count <= 3
