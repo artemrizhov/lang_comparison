@@ -1,8 +1,12 @@
-require Process
-import WxConstants
-
-
 defmodule LifeGame do
+  @moduledoc """
+  The Game of Life implemented in funcional style in Elixir.
+  https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+  """
+  @author "Artem Rizhov"
+
+  require Process
+
   @width 300
   @height 300
   @cell_size 5
@@ -38,11 +42,15 @@ defmodule LifeGame do
     end)
   end
 
+  @doc """
+  Calculates the next state of cell.
+  """
   def calc_cell(grid, x, y, width, height) do
     # Count populated neighbours.
     alive_count = Enum.sum(for {nx, ny} <- get_neighbours(x, y, width, height) do
       if grid_elem(grid, nx, ny), do: 1, else: 0
     end)
+    # Choice next value.
     if grid_elem(grid, x, y) do
       alive_count >= 2 and alive_count <= 3
     else
@@ -50,8 +58,11 @@ defmodule LifeGame do
     end
   end
 
+
+  @doc """
+  Returns the neighbours coordinates.
+  """
   def get_neighbours(x, y, width, height) do
-    # Calculates and returns the neighbours coordinates.
     x1 = if x == 0, do: width - 1, else: x - 1
     y1 = if y == 0, do: height - 1, else: y - 1
     y3 = if y == height - 1, do: 0, else: y + 1
@@ -81,7 +92,13 @@ end
 
 
 defmodule Screen do
+  @moduledoc """
+  Allows to draw simple graphics using wxWidgets.
+  """
+  @author "Artem Rizhov"
+
   import Bitwise
+  import WxConstants
 
   def init(title, width, height, cell_size) do
     title = to_charlist(title)

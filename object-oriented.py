@@ -2,6 +2,9 @@
 The Game of Life implemented in object-oriented style.
 https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
 """
+
+__author__ = 'Artem Rizhov'
+
 from random import random
 from time import sleep
 
