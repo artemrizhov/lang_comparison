@@ -5,69 +5,86 @@ defmodule LifeGame do
   """
   @author "Artem Rizhov"
 
-  require Process
-
   @width 300
   @height 300
   @cell_size 5
-  @bg_color {255, 255, 255}
   @cell_color {0, 100, 0}
+  @bg_color {255, 255, 255}
   @interval 10  # Milliseconds.
   @init_density 0.1  # From 0 to 1.
 
+  alias LifeGame.World, as: World
+
   def start do
-    screen = Screen.init("Game of Life", @width, @height, @cell_size)
-    create_random_grid(@width, @height) |> run(@width, @height, screen)
+    screen = Screen.init("Game of Life",
+                         @width * @cell_size, @height * @cell_size)
+    World.create_random(@width, @height, @init_density) |> run(screen)
   end
 
-  def run(grid, width, height, screen) do
-    render screen, grid, width, height
+  def run(world, screen) do
+    Screen.update(screen, @bg_color,
+                  &(World.render &1, world, @cell_size, @cell_color))
     Process.sleep @interval
-    grid |> make_step(width, height) |> run(width, height, screen)
+    world |> World.next_step |> run(screen)
+  end
+end
+
+
+defmodule LifeGame.World do
+  defstruct [:grid, :width, :height]
+
+  alias LifeGame.World, as: World
+
+  def create_random(width, height, init_density) do
+    %World{
+      width: width, height: height,
+      # The grid is a one-dimensional tuple.
+      grid: grid_coords(width, height)
+        |> Enum.map(&(random_cell &1, init_density)) |> List.to_tuple
+    }
   end
 
-  def create_random_grid(width, height) do
-    List.to_tuple(for _ <- 0..(height-1) do
-      List.to_tuple(for _ <- 0..(width-1) do
-        :rand.uniform() <= @init_density
-      end)
-    end)
+  def random_cell(_coord, probability) do
+    :rand.uniform() <= probability
   end
 
-  def make_step(grid, width, height) do
-    List.to_tuple(for y <- 0..(height-1) do
-      List.to_tuple(for x <- 0..(width-1) do
-        calc_cell(grid, x, y, width, height)
-      end)
-    end)
+  def next_step(world) do
+    %{world | grid:
+      grid_coords(world) |> Enum.map(&(next_cell_state(world, &1)))
+      |> List.to_tuple }
   end
 
-  @doc """
-  Calculates the next state of cell.
-  """
-  def calc_cell(grid, x, y, width, height) do
+  def next_cell_state(world, coord) do
     # Count populated neighbours.
     alive_count =
-      Enum.sum(for {nx, ny} <- get_neighbours(x, y, width, height) do
-        if grid_elem(grid, nx, ny), do: 1, else: 0
-      end)
+      neighbours(world, coord)
+      |> Enum.map(&(if cell_alive?(world, &1), do: 1, else: 0)) |> Enum.sum
     # Choice next value.
-    if grid_elem(grid, x, y) do
+    if cell_alive?(world, coord) do
       alive_count >= 2 and alive_count <= 3
     else
       alive_count == 3
     end
   end
 
+  def grid_coords(width, height) do
+    Stream.unfold({0, 0}, fn
+      # End of grid.
+      {0, ^height} -> nil;
+      # End of line.
+      {x, y} when x == width - 1 -> {{x, y}, {0, y + 1}};
+      # Limits are not reached.
+      {x, y} -> {{x, y}, {x + 1, y}};
+    end)
+  end
 
-  @doc """
-  Returns the neighbours coordinates.
-  """
-  def get_neighbours(x, y, width, height) do
-    x1 = if x == 0, do: width - 1, else: x - 1
-    y1 = if y == 0, do: height - 1, else: y - 1
-    y3 = if y == height - 1, do: 0, else: y + 1
-    x3 = if x == width - 1, do: 0, else: x + 1
+  def grid_coords(world), do: grid_coords(world.width, world.height)
+
+  def neighbours(world, {x, y}) do
+    x1 = if x == 0, do: world.width - 1, else: x - 1
+    y1 = if y == 0, do: world.height - 1, else: y - 1
+    y3 = if y == world.height - 1, do: 0, else: y + 1
+    x3 = if x == world.width - 1, do: 0, else: x + 1
     x2 = x
     y2 = y
     [{x1, y1}, {x1, y2}, {x1, y3},
@@ -75,19 +92,16 @@ defmodule LifeGame do
      {x3, y1}, {x3, y2}, {x3, y3}]
   end
 
-  def grid_elem(grid, x, y) do
-    elem(elem(grid, y), x)
+  def cell_alive?(world, {x, y}) do
+    elem world.grid, y * world.width + x
   end
 
-  def render(screen, grid, width, height) do
-    context = Screen.start_drawing(screen)
-    Screen.clear context
-    for y <- 0..(height-1), x <- 0..(width-1), grid_elem(grid, x, y) do
+  def render(context, world, cell_size, cell_color) do
+    for coord = {x, y} <- grid_coords(world), cell_alive?(world, coord) do
       Screen.draw_rectangle(
-        context, @cell_color,
-        x * @cell_size, y * @cell_size, @cell_size, @cell_size)
+        context, cell_color,
+        x * cell_size, y * cell_size, cell_size, cell_size)
     end
-    Screen.finish_drawing(context)
   end
 end
 
@@ -101,25 +115,29 @@ defmodule Screen do
   import Bitwise
   import WxConstants
 
-  def init(title, width, height, cell_size) do
-    title = to_charlist(title)
-    _create_window(title, width * cell_size, height * cell_size)
+  def init(title, width, height) when is_binary(title) do
+    init to_charlist(title), width, height
+  end
+  def init(title, width, height) do
+    :wx.new()
+    frame = :wxFrame.new(
+      :wx.null, wxID_ANY, title, size: {width, height},
+       style: wxSYSTEM_MENU ||| wxMINIMIZE_BOX  ||| wxCLOSE_BOX ||| wxCAPTION)
+    :wxFrame.show frame
+    frame
   end
 
-  def start_drawing(frame) do
-    # Returns drawing context.
-    :wxBufferedPaintDC.new(frame)
-  end
-
-  def finish_drawing(dc) do
-    # This is required to make the changes visible.
-    :wxBufferedPaintDC.destroy dc
-  end
-
-  def clear(dc) do
-    :wxDC.setBackground dc, brush = :wxBrush.new({255, 255, 255})
+  def update(frame, bg_color, render) do
+    # Create drawing context.
+    dc = :wxBufferedPaintDC.new(frame)
+    # Clear screen.
+    :wxDC.setBackground dc, brush = :wxBrush.new(bg_color)
     :wxDC.clear dc
     :wxBrush.destroy brush
+    # Call the render function.
+    render.(dc)
+    # This is required to make the changes visible.
+    :wxBufferedPaintDC.destroy dc
   end
 
   def draw_rectangle(dc, color, x, y, width, height) do
@@ -128,15 +146,6 @@ defmodule Screen do
     :wxDC.drawRectangle dc, {x, y}, {width, height}
     :wxPen.destroy pen
     :wxBrush.destroy brush
-  end
-
-  def _create_window(title, width, height) do
-    :wx.new()
-    frame = :wxFrame.new(
-      :wx.null, wxID_ANY, title, size: {width, height},
-       style: wxSYSTEM_MENU ||| wxMINIMIZE_BOX  ||| wxCLOSE_BOX ||| wxCAPTION)
-    :wxFrame.show frame
-    frame
   end
 end
 
