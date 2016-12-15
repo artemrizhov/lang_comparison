@@ -1,9 +1,11 @@
-defmodule LifeGame do
+defmodule LifeGame.World do
   @moduledoc """
   The Game of Life implemented in funcional style in Elixir.
   https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
   """
   @author "Artem Rizhov"
+
+  defstruct [:grid, :width, :height]
 
   @width 300
   @height 300
@@ -14,34 +16,48 @@ defmodule LifeGame do
   @init_density 0.1  # From 0 to 1.
 
   alias LifeGame.World, as: World
+  alias LifeGame.Screen, as: Screen
+
+  def start_link(name) do
+    {:ok, pid} = Task.start_link(&start/0)
+    Process.register pid, name
+    {:ok, pid}
+  end
 
   def start do
     screen = Screen.init("Game of Life",
                          @width * @cell_size, @height * @cell_size)
-    World.create_random(@width, @height, @init_density) |> run(screen)
+    create_random(@width, @height, @init_density) |> run(screen)
   end
 
   def run(world, screen) do
     Screen.update(screen, @bg_color,
-                  &(World.render &1, world, @cell_size, @cell_color))
+                  &(render &1, world, @cell_size, @cell_color))
     Process.sleep @interval
-    world |> World.next_step |> run(screen)
+    world |> next_step |> run(screen)
   end
-end
-
-
-defmodule LifeGame.World do
-  defstruct [:grid, :width, :height]
-
-  alias LifeGame.World, as: World
 
   def create_random(width, height, init_density) do
     %World{
       width: width, height: height,
-      # The grid is a one-dimensional tuple.
-      grid: grid_coords(width, height)
-        |> Enum.map(&(random_cell &1, init_density)) |> List.to_tuple
+      grid: random_grid(width, height, init_density)
     }
+  end
+
+  def random_grid(width, height, init_density) do
+    coords = grid_coords(width, height)
+    coords |> random_cells(init_density) |> grid_from_list
+  end
+
+  def random_cells(coords, init_density) do
+    Enum.map coords, fn coord ->
+      random_cell coord, init_density
+    end
+  end
+
+  def grid_from_list(list) do
+    # Grid is represented as one-dimensional tuple.
+    List.to_tuple list
   end
 
   def random_cell(_coord, probability) do
@@ -49,16 +65,17 @@ defmodule LifeGame.World do
   end
 
   def next_step(world) do
-    %{world | grid:
-      grid_coords(world) |> Enum.map(&(next_cell_state(world, &1)))
-      |> List.to_tuple }
+    %{world | grid: grid_from_list(
+      for coord <- grid_coords(world) do
+        next_cell_state(world, coord)
+      end
+    )}
   end
 
   def next_cell_state(world, coord) do
     # Count populated neighbours.
-    alive_count =
-      neighbours(world, coord)
-      |> Enum.map(&(if cell_alive?(world, &1), do: 1, else: 0)) |> Enum.sum
+    neighbours = neighbours(world, coord)
+    alive_count = count(neighbours, fn cell -> cell_alive?(world, cell) end)
     # Choice next value.
     if cell_alive?(world, coord) do
       alive_count >= 2 and alive_count <= 3
@@ -67,15 +84,27 @@ defmodule LifeGame.World do
     end
   end
 
+  @doc """
+  More efficient version of Enum.count.
+  http://stackoverflow.com/questions/41175829/why-enum-map-is-more-efficient-than-enum-count-in-elixir/41177073#41177073
+  https://github.com/elixir-lang/elixir/commit/9d39ebca079350ead3cec55d002937bbb836980a
+  TODO: replace with Enum.count when new Elixir version released (current v1.3.4)
+  """
+  def count(enumerable, fun) when is_function(fun, 1) do
+    Enum.reduce(enumerable, 0, fn(entry, acc) ->
+      if fun.(entry), do: acc + 1, else: acc
+    end)
+  end
+
   def grid_coords(width, height) do
-    Stream.unfold({0, 0}, fn
+    Stream.unfold {0, 0}, fn
       # End of grid.
       {0, ^height} -> nil;
       # End of line.
       {x, y} when x == width - 1 -> {{x, y}, {0, y + 1}};
       # Limits are not reached.
       {x, y} -> {{x, y}, {x + 1, y}};
-    end)
+    end
   end
 
   def grid_coords(world), do: grid_coords(world.width, world.height)
@@ -100,54 +129,7 @@ defmodule LifeGame.World do
     for coord = {x, y} <- grid_coords(world), cell_alive?(world, coord) do
       Screen.draw_rectangle(
         context, cell_color,
-        x * cell_size, y * cell_size, cell_size, cell_size)
+        {x * cell_size, y * cell_size}, {cell_size, cell_size})
     end
   end
 end
-
-
-defmodule Screen do
-  @moduledoc """
-  Allows to draw simple graphics using wxWidgets.
-  """
-  @author "Artem Rizhov"
-
-  import Bitwise
-  import WxConstants
-
-  def init(title, width, height) when is_binary(title) do
-    init to_charlist(title), width, height
-  end
-  def init(title, width, height) do
-    :wx.new()
-    frame = :wxFrame.new(
-      :wx.null, wxID_ANY, title, size: {width, height},
-       style: wxSYSTEM_MENU ||| wxMINIMIZE_BOX  ||| wxCLOSE_BOX ||| wxCAPTION)
-    :wxFrame.show frame
-    frame
-  end
-
-  def update(frame, bg_color, render) do
-    # Create drawing context.
-    dc = :wxBufferedPaintDC.new(frame)
-    # Clear screen.
-    :wxDC.setBackground dc, brush = :wxBrush.new(bg_color)
-    :wxDC.clear dc
-    :wxBrush.destroy brush
-    # Call the render function.
-    render.(dc)
-    # This is required to make the changes visible.
-    :wxBufferedPaintDC.destroy dc
-  end
-
-  def draw_rectangle(dc, color, x, y, width, height) do
-    :wxDC.setPen dc, pen = :wxPen.new(color, [width: 1])
-    :wxDC.setBrush dc, brush = :wxBrush.new(color)
-    :wxDC.drawRectangle dc, {x, y}, {width, height}
-    :wxPen.destroy pen
-    :wxBrush.destroy brush
-  end
-end
-
-
-LifeGame.start()
