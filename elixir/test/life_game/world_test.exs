@@ -2,7 +2,8 @@ defmodule LifeGame.WorldTest do
   use ExUnit.Case, async: true
   doctest LifeGame.World
 
-  alias LifeGame.World, as: World
+  alias LifeGame.World
+  import LifeGame.Utils, only: [str_to_grid: 1]
 
   test "next_step/1" do
     # Primitive field.
@@ -41,15 +42,6 @@ defmodule LifeGame.WorldTest do
     world_after = %World{width: 5, height: 5, grid: str_to_grid(
       "- - - - #    - - - - -    - - - - -    - - - - #    - - - - #")}
     assert World.next_step(world_before) == world_after
-  end
-
-  def str_to_grid(str) when is_binary(str) do
-    allowed_chars = [_dead, alive] = '-#'
-    str
-    |> String.to_charlist
-    |> Stream.filter(fn x -> x in allowed_chars end) # Filter formatting.
-    |> Enum.map(fn x -> x == alive end)  # Convert to boolean.
-    |> List.to_tuple
   end
 
   test "create_random/3" do
