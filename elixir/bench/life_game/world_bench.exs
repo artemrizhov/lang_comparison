@@ -2,9 +2,9 @@ defmodule LifeGame.WorldBench do
   use Benchfella
 
   alias LifeGame.World
-  import LifeGame.Utils, only: [str_to_grid: 1]
+  import LifeGame.Utils, only: [str_to_grid: 3]
 
-  @glider_world %World{width: 6, height: 6, grid: str_to_grid("""
+  @glider_world %World{width: 6, height: 6, grid: str_to_grid(6, 6, """
     - - - - - -
     - - # - - -
     - - - # - -
