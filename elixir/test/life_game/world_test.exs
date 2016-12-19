@@ -54,10 +54,16 @@ defmodule LifeGame.WorldTest do
     assert grid == {true, true, true, true, true, true}
   end
 
-  test "alive?/2" do
+  test "is_alive/2" do
+    import World
     world = %World{width: 2, height: 1, grid: {true, false}}
     # The order of elements is not important.
-    assert World.alive?(world, {0, 0})
-    assert not World.alive?(world, {1, 0})
+    assert World.is_alive(world, {0, 0})
+    assert not World.is_alive(world, {1, 0})
+  end
+
+  test "is_alive/1" do
+    assert World.is_alive(true)
+    assert not World.is_alive(false)
   end
 end
