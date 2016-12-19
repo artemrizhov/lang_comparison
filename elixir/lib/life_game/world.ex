@@ -15,8 +15,28 @@ defmodule LifeGame.World do
   @interval 10  # Milliseconds.
   @init_density 0.1  # From 0 to 1.
 
-  alias LifeGame.World, as: World
-  alias LifeGame.Screen, as: Screen
+  alias LifeGame.World
+  alias LifeGame.Screen
+
+
+  defmacro cell(world, {x, y}) do
+    quote do
+      elem(unquote(world).grid, unquote(y) * unquote(world).width + unquote(x))
+    end
+  end
+  defmacro cell(grid, width, {x, y}) do
+    quote do
+      elem(unquote(grid), unquote(y) * unquote(width) + unquote(x))
+    end
+  end
+
+  def alive?(cell), do: cell
+  def alive?(world, {x, y}), do: alive?(cell(world, {x, y}))
+  defmacro is_alive(cell), do: quote do: unquote(cell)
+  defmacro is_alive(world, {x, y}) do
+    quote do: is_alive(cell(unquote(world), {unquote(x), unquote(y)}))
+  end
+
 
   def start_link(name) do
     {:ok, pid} = Task.start_link(&start/0)
@@ -46,42 +66,54 @@ defmodule LifeGame.World do
 
   def random_grid(width, height, init_density) do
     coords = grid_coords(width, height)
-    coords |> random_cells(init_density) |> grid_from_list
+    coords |> random_cells(init_density) |> to_grid
   end
 
   def random_cells(coords, init_density) do
-    Enum.map coords, fn coord ->
-      random_cell coord, init_density
-    end
-  end
-
-  def grid_from_list(list) do
-    # Grid is represented as one-dimensional tuple.
-    List.to_tuple list
+    Enum.map coords, fn(coord) -> random_cell(coord, init_density) end
   end
 
   def random_cell(_coord, probability) do
     :rand.uniform() <= probability
   end
 
+  @doc """
+  Returns the world at the next step.
+  """
   def next_step(world) do
-    %{world | grid: grid_from_list(
-      for coord <- grid_coords(world) do
-        next_cell_state(world, coord)
-      end
-    )}
+    %{world | grid: next_grid_state(world)}
   end
 
-  def next_cell_state(world, coord) do
-    # Count populated neighbours.
-    neighbours = neighbours(world, coord)
-    alive_count = count(neighbours, fn cell -> cell_alive?(world, cell) end)
+  def next_grid_state(world) do
+    to_grid(
+      for {x, y} <- grid_coords(world) do
+        next_cell_state cell(world, {x, y}), neighbours(world, {x, y})
+      end
+    )
+  end
+
+  @doc """
+  Get the cell state for the next step of the world time.
+  """
+  def next_cell_state(cell, neighbours) do
+    # Enum.count is not used for speed optimisation.
+    alive_count = Enum.reduce(neighbours, 0, fn(cell, count) ->
+      if is_alive(cell), do: count + 1, else: count
+    end)
     # Choice next value.
-    if cell_alive?(world, coord) do
+    if is_alive(cell) do
       alive_count >= 2 and alive_count <= 3
     else
       alive_count == 3
     end
+  end
+
+  @doc """
+  Returns grid internal representation. The grid is represented as tuple.
+  """
+  def to_grid(list) when is_list(list) do
+    # Grid is represented as one-dimensional tuple.
+    List.to_tuple list
   end
 
   @doc """
@@ -96,6 +128,7 @@ defmodule LifeGame.World do
     end)
   end
 
+  def grid_coords(world), do: grid_coords(world.width, world.height)
   def grid_coords(width, height) do
     Stream.unfold {0, 0}, fn
       # End of grid.
@@ -107,26 +140,26 @@ defmodule LifeGame.World do
     end
   end
 
-  def grid_coords(world), do: grid_coords(world.width, world.height)
-
-  def neighbours(world, {x, y}) do
-    x1 = if x == 0, do: world.width - 1, else: x - 1
-    y1 = if y == 0, do: world.height - 1, else: y - 1
-    y3 = if y == world.height - 1, do: 0, else: y + 1
-    x3 = if x == world.width - 1, do: 0, else: x + 1
+  @doc """
+  Get the neighbour cells.
+  This function is optimized for speed.
+  """
+  def neighbours(%{grid: grid, width: width, height: height}, {x, y}) do
+    x1 = if x == 0, do: width - 1, else: x - 1
+    y1 = if y == 0, do: height - 1, else: y - 1
+    y3 = if y == height - 1, do: 0, else: y + 1
+    x3 = if x == width - 1, do: 0, else: x + 1
     x2 = x
     y2 = y
-    [{x1, y1}, {x1, y2}, {x1, y3},
-     {x2, y1}, {x2, y3},
-     {x3, y1}, {x3, y2}, {x3, y3}]
-  end
-
-  def cell_alive?(world, {x, y}) do
-    elem world.grid, y * world.width + x
+    [cell(grid, width, {x1, y1}), cell(grid, width, {x1, y2}),
+     cell(grid, width, {x1, y3}),
+     cell(grid, width, {x2, y1}), cell(grid, width, {x2, y3}),
+     cell(grid, width, {x3, y1}), cell(grid, width, {x3, y2}),
+     cell(grid, width, {x3, y3})]
   end
 
   def render(context, world, cell_size, cell_color) do
-    for coord = {x, y} <- grid_coords(world), cell_alive?(world, coord) do
+    for {x, y} <- grid_coords(world), is_alive(world, {x, y}) do
       Screen.draw_rectangle(
         context, cell_color,
         {x * cell_size, y * cell_size}, {cell_size, cell_size})

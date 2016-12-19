@@ -1,0 +1,4 @@
+duration:2.0;mem stats:false;sys mem stats:false
+module;test;tags;iterations;elapsed
+LifeGame.WorldBench	next_step/1 for Glider figure		100000	3551695
+LifeGame.WorldBench	next_step/1 for big random world		5	5274708

@@ -54,19 +54,10 @@ defmodule LifeGame.WorldTest do
     assert grid == {true, true, true, true, true, true}
   end
 
-  test "neighbours/2" do
-    world = %World{width: 4, height: 3}
-    # The order of elements is not important.
-    assert Enum.sort(World.neighbours(world, {0, 0})) == Enum.sort(
-      [{3, 2}, {0, 2}, {1, 2}, {3, 0}, {1, 0}, {3, 1}, {0, 1}, {1, 1}])
-    assert Enum.sort(World.neighbours(world, {3, 2})) == Enum.sort(
-      [{2, 1}, {3, 1}, {0, 1}, {2, 2}, {0, 2}, {2, 0}, {3, 0}, {0, 0}])
-  end
-
-  test "cell_alive?/2" do
+  test "alive?/2" do
     world = %World{width: 2, height: 1, grid: {true, false}}
     # The order of elements is not important.
-    assert World.cell_alive?(world, {0, 0})
-    assert not World.cell_alive?(world, {1, 0})
+    assert World.alive?(world, {0, 0})
+    assert not World.alive?(world, {1, 0})
   end
 end
