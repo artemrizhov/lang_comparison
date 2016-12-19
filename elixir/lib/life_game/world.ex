@@ -18,6 +18,7 @@ defmodule LifeGame.World do
   alias LifeGame.World
   alias LifeGame.Screen
 
+  # The following macros are defined to improve the code performace.
 
   defmacro cell(world, {x, y}) do
     quote do
@@ -30,8 +31,6 @@ defmodule LifeGame.World do
     end
   end
 
-  def alive?(cell), do: cell
-  def alive?(world, {x, y}), do: alive?(cell(world, {x, y}))
   defmacro is_alive(cell), do: quote do: unquote(cell)
   defmacro is_alive(world, {x, y}) do
     quote do: is_alive(cell(unquote(world), {unquote(x), unquote(y)}))
@@ -45,14 +44,13 @@ defmodule LifeGame.World do
   end
 
   def start do
-    screen = Screen.init("Game of Life",
-                         @width * @cell_size, @height * @cell_size)
-    create_random(@width, @height, @init_density) |> run(screen)
+    screen = Screen.init("Game of Life", @width * @cell_size, @height * @cell_size)
+    world = create_random(@width, @height, @init_density)
+    run world, screen
   end
 
   def run(world, screen) do
-    Screen.update(screen, @bg_color,
-                  &(render &1, world, @cell_size, @cell_color))
+    Screen.update screen, @bg_color, &(render &1, world, @cell_size, @cell_color)
     Process.sleep @interval
     world |> next_step |> run(screen)
   end
@@ -123,9 +121,9 @@ defmodule LifeGame.World do
   TODO: replace with Enum.count when new Elixir version released (current v1.3.4)
   """
   def count(enumerable, fun) when is_function(fun, 1) do
-    Enum.reduce(enumerable, 0, fn(entry, acc) ->
+    Enum.reduce enumerable, 0, fn(entry, acc) ->
       if fun.(entry), do: acc + 1, else: acc
-    end)
+    end
   end
 
   def grid_coords(world), do: grid_coords(world.width, world.height)
