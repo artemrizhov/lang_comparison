@@ -59,7 +59,6 @@ defmodule LifeGame.WorldTest do
   end
 
   test "is_alive/1" do
-    assert World.is_alive(true)
-    assert not World.is_alive(false)
+    assert World.is_alive(true) == not World.is_alive(false)
   end
 end

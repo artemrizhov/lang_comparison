@@ -13,7 +13,7 @@ defmodule LifeGame.WorldBench do
     - - - - - -
     """)}
 
-  :random.seed({0, 0, 0})
+  :rand.seed(:exs64, {0, 0, 0})
   @big_random_world World.create_random(1000, 1000, 0.1)
 
   bench "next_step/1 for Glider figure" do
