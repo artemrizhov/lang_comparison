@@ -1,0 +1,6 @@
+duration:2.0;mem stats:false;sys mem stats:false
+module;test;tags;iterations;elapsed
+LifeGame.WorldBench	neighbours/2 for big world		10000000	8346150
+LifeGame.WorldBench	neighbours/2 for small world of Glider		10000000	6738428
+LifeGame.WorldBench	next_step/1 for Glider figure		100000	4285198
+LifeGame.WorldBench	next_step/1 for big random world		1	4125710
