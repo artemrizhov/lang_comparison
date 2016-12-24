@@ -31,7 +31,8 @@ defmodule LifeGame.Mixfile do
   defp deps do
     [
       {:credo, "~> 0.5", only: [:dev, :test]},
-      {:benchfella, "~> 0.3", only: [:dev, :test]}
+      {:benchfella, "~> 0.3", only: [:dev, :test]},
+      {:benchee, "~> 0.6", only: :dev}
     ]
   end
 end
