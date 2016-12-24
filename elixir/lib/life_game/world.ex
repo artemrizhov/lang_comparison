@@ -28,9 +28,9 @@ defmodule LifeGame.World do
       unquote(world).grid[unquote(y) * unquote(world).width + unquote(x)]
     end
   end
-  defmacro cell(world, width, {x, y}) do
+  defmacro cell(grid, width, {x, y}) do
     quote do
-      unquote(world).grid[unquote(y) * unquote(width) + unquote(x)]
+      unquote(grid)[unquote(y) * unquote(width) + unquote(x)]
     end
   end
   defmacro is_alive(cell), do: quote do: unquote(cell)
@@ -107,19 +107,18 @@ defmodule LifeGame.World do
   Get the neighbour cells.
   This function is optimized for speed.
   """
-  def neighbours(world, {x, y}) do
-    %{width: width, height: height} = world
+  def neighbours(%{grid: grid, width: width, height: height}, {x, y}) do
     x1 = if x == 0, do: width - 1, else: x - 1
     y1 = if y == 0, do: height - 1, else: y - 1
     y3 = if y == height - 1, do: 0, else: y + 1
     x3 = if x == width - 1, do: 0, else: x + 1
     x2 = x
     y2 = y
-    [cell(world, width, {x1, y1}), cell(world, width, {x1, y2}),
-     cell(world, width, {x1, y3}),
-     cell(world, width, {x2, y1}), cell(world, width, {x2, y3}),
-     cell(world, width, {x3, y1}), cell(world, width, {x3, y2}),
-     cell(world, width, {x3, y3})]
+    [cell(grid, width, {x1, y1}), cell(grid, width, {x1, y2}),
+     cell(grid, width, {x1, y3}),
+     cell(grid, width, {x2, y1}), cell(grid, width, {x2, y3}),
+     cell(grid, width, {x3, y1}), cell(grid, width, {x3, y2}),
+     cell(grid, width, {x3, y3})]
   end
 
   def render(context, world, cell_size, cell_color) do
