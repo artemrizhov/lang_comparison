@@ -23,14 +23,9 @@ defmodule LifeGame.World do
       {rem(unquote(i), unquote(width)), div(unquote(i), unquote(width))}
     end
   end
-  defmacro cell(world, {x, y}) do
+  defmacro to_index(width, x, y) do
     quote do
-      unquote(world).grid[unquote(y) * unquote(world).width + unquote(x)]
-    end
-  end
-  defmacro cell(grid, width, {x, y}) do
-    quote do
-      unquote(grid)[unquote(y) * unquote(width) + unquote(x)]
+      unquote(y) * unquote(width) + unquote(x)
     end
   end
   defmacro is_alive(cell), do: quote do: unquote(cell)
@@ -62,9 +57,11 @@ defmodule LifeGame.World do
   end
 
   def random_grid(width, height, init_density) do
-    for i <- 0..(width*height-1), into: %{} do
+    for i <- 0..(width*height-1) do
       {i, random_cell(init_density)}
     end
+    |> Stream.filter(fn({i, cell}) -> cell end)
+    |> Enum.into(%{})
   end
 
   def random_cell(probability) do
@@ -79,46 +76,45 @@ defmodule LifeGame.World do
   end
 
   def next_grid_state(world) do
-    Enum.into(for {i, cell} <- world.grid do
-      coord = to_coord(i, world.width)
-      neighbours = neighbours(world, coord)
-      {i, next_cell_state(cell, neighbours)}
-    end, %{})
+    world.grid
+    |> count_neighbours(world.width, world.height)
+    |> ns_counts_to_grid
   end
 
-  @doc """
-  Get the cell state for the next step of the world time.
-  """
-  def next_cell_state(cell, neighbours) do
-    # Enum.count is not used for speed optimisation.
-    # TODO: Try lover API.
-    alive_count = Enum.reduce(neighbours, 0, fn(cell, count) ->
-      if is_alive(cell), do: count + 1, else: count
+  def count_neighbours(grid, w, h) do
+    Enum.reduce(grid, %{}, fn
+      ({idx, true}, res) ->
+        Enum.reduce(neighbours_indexes(idx, w, h), res, fn(i, m) ->
+          Map.update(m, i, 1, &(&1+1))
+        end)
     end)
-    # Choice next value.
-    if is_alive(cell) do
-      alive_count >= 2 and alive_count <= 3
-    else
-      alive_count == 3
-    end
+  end
+
+  def ns_counts_to_grid(ns_counts) do
+    Enum.reduce(ns_counts, %{}, fn({idx, count}, next_grid) ->
+      if count == 2 || count == 3 do
+        Map.put(next_grid, idx, true)
+      else
+        next_grid
+      end
+    end)
   end
 
   @doc """
-  Get the neighbour cells.
+  Get the neighbour cell indexes.
   This function is optimized for speed.
   """
-  def neighbours(%{grid: grid, width: width, height: height}, {x, y}) do
+  def neighbours_indexes(i, width, height) do
+    {x, y} = to_coord(i, width)
     x1 = if x == 0, do: width - 1, else: x - 1
     y1 = if y == 0, do: height - 1, else: y - 1
     y3 = if y == height - 1, do: 0, else: y + 1
     x3 = if x == width - 1, do: 0, else: x + 1
     x2 = x
     y2 = y
-    [cell(grid, width, {x1, y1}), cell(grid, width, {x1, y2}),
-     cell(grid, width, {x1, y3}),
-     cell(grid, width, {x2, y1}), cell(grid, width, {x2, y3}),
-     cell(grid, width, {x3, y1}), cell(grid, width, {x3, y2}),
-     cell(grid, width, {x3, y3})]
+    [to_index(width, x1, y1), to_index(width, x1, y2), to_index(width, x1, y3),
+     to_index(width, x2, y1), to_index(width, x2, y3),
+     to_index(width, x3, y1), to_index(width, x3, y2), to_index(width, x3, y3)]
   end
 
   def render(context, world, cell_size, cell_color) do

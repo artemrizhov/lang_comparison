@@ -23,12 +23,4 @@ defmodule LifeGame.WorldBench do
   bench "next_step/1 for big random world" do
     World.next_step(@big_random_world)
   end
-
-  bench "neighbours/2 for small world of Glider" do
-    World.neighbours(@glider_world, {0, 0})
-  end
-
-  bench "neighbours/2 for big world" do
-    World.neighbours(@big_random_world, {0, 0})
-  end
 end
