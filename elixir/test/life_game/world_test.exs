@@ -32,6 +32,14 @@ defmodule LifeGame.WorldTest do
       - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     """)
     world_after = %World{width: 35, height: 6, grid: grid}
+    screen_before = LifeGame.Screen.init("Before", width * 20, height * 20)
+    screen_after = LifeGame.Screen.init("After", width * 20, height * 20)
+    screen_error = LifeGame.Screen.init("Error", width * 20, height * 20)
+    world = World.next_step(world_before)
+#    LifeGame.Screen.update screen_before, {255, 255, 255}, &(World.render &1, world_before, 20, {0, 100, 0})
+#    LifeGame.Screen.update screen_after, {255, 255, 255}, &(World.render &1, world_after, 20, {0, 100, 0})
+#    LifeGame.Screen.update screen_error, {255, 255, 255}, &(World.render &1, world, 20, {0, 100, 0})
+#    Process.sleep 100000
     assert World.next_step(world_before) == world_after
 
     # Boundaries.

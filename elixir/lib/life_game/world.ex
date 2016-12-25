@@ -84,15 +84,16 @@ defmodule LifeGame.World do
   def count_neighbours(grid, w, h) do
     Enum.reduce(grid, %{}, fn
       ({idx, true}, res) ->
-        Enum.reduce(neighbours_indexes(idx, w, h), res, fn(i, m) ->
-          Map.update(m, i, 1, &(&1+1))
+        res = Enum.reduce(neighbours_indexes(idx, w, h), res, fn(i, m) ->
+          Map.update(
+            m, i, {Map.get(grid, i, false), 1}, fn({c, n}) -> {c, n+1} end)
         end)
     end)
   end
 
   def ns_counts_to_grid(ns_counts) do
-    Enum.reduce(ns_counts, %{}, fn({idx, count}, next_grid) ->
-      if count == 2 || count == 3 do
+    Enum.reduce(ns_counts, %{}, fn({idx, {cell, count}}, next_grid) ->
+      if cell and (count == 2 or count == 3) or not cell and count == 3 do
         Map.put(next_grid, idx, true)
       else
         next_grid
